@@ -1,16 +1,16 @@
-  import React from 'react';
-  import { useState } from "react";
-  import Navigation from './Navigation';
-  import imageadd from '../assets/imageadd.png';
-  import { uploadFileToIPFS, uploadJSONToIPFS } from "../pinata";
-  import Marketplace from '../Marketplace.json'
-  import { useLocation } from "react-router";
+import React from 'react';
+import Navigation from './Navigation';
+import { useState } from "react";
+import { ethers } from "ethers";
+import { useLocation } from 'react-router-dom';
+import { uploadFileToIPFS, uploadJSONToIPFS } from "../pinata";
+import Marketplace from '../Marketplace.json';
 
-  const Create = () => {
-    const activePage = 'Create';
-    const [formParams, updateFormParams] = useState({ name: '', description: '', price: ''});
+const Create = () => {
+  const activePage = 'Create';
+  const [formParams, updateFormParams] = useState({ name: '', description: '', price: ''});
     const [fileURL, setFileURL] = useState(null);
-    const ethers = require("ethers");
+    
     const [message, updateMessage] = useState('');
     const location = useLocation();
 
@@ -85,7 +85,7 @@
             if(metadataURL === -1)
                 return;
             //After adding your Hardhat network to your metamask, this code will get providers and signers
-            const provider = new ethers.providers.Web3Provider(window.ethereum);
+            const provider = new ethers.BrowserProvider(window.ethereum);
             const signer = provider.getSigner();
             disableButton();
             updateMessage("Uploading NFT(takes 5 mins).. please dont click anything!")
@@ -94,7 +94,15 @@
             let contract = new ethers.Contract(Marketplace.address, Marketplace.abi, signer)
 
             //massage the params to be sent to the create NFT request
-            const price = ethers.utils.parseUnits(formParams.price, 'ether')
+            const priceInput = formParams.price;
+            if (!priceInput || isNaN(priceInput)) {
+               updateMessage("Please enter a valid price.");
+               return;
+            }
+
+           // Convert the price to wei (1 ether = 1e18 wei)
+           const price = ethers.utils.parseUnits(priceInput, 'ether');
+
             let listingPrice = await contract.getListPrice()
             listingPrice = listingPrice.toString()
 
@@ -113,52 +121,44 @@
         }
     }
 
-    console.log("Working", process.env);
+    
 
-    return (
-      <div>
+  return (
+    <>
+   
+      
+     
+      <div className="">
         <Navigation activePage={activePage} />
-        <div>
-        <div className="flex justify-center items-center">
-         <div className="bg-gray-300 w-28 h-28 sm:w-28 mb-16 sm:h-40 relative top-16 md:w-48 md:h-60 p-2 flex justify-center items-center transition duration-300">
-           <img className="w-12 h-12" src={imageadd} alt="Add-image" />
-          <br />
-          <input className=" bg-black text-white relative rounded-lg" type="file" name="fileToUpload" id="fileToUpload" />
-        </div>
-      </div>
-
-
-        <div className='flex flex-col items-center justify-center h-full top-20 relative'>
-          <div className='bg-gray-300 p-8 rounded-lg'>
-
-
-            <form className='flex flex-col gap-4'>  
-              <div className='flex flex-col'>
-                <label htmlFor='title'>Title:</label>
-                <input className='border border-gray-400 rounded' type='text' id='title' required name='title' />
-              </div>
-
-              <div className='flex flex-col'>
-                <label htmlFor='description'>Description:</label>
-                <textarea className='px-4 py-2 border border-gray-400 rounded' id='description' name='description' required></textarea>
-              </div>
-
-              <div className='flex flex-col'>
-                <label htmlFor='price'>Price:</label>
-                <input className='px-4 py-2 border border-gray-400 rounded' id='price' name='price' pattern='[0-9]+(\.[0-9]{1,2})?' />
-              </div>
-
-              <div className='flex justify-center'>
-                <button className='bg-purple-700 hover:bg-purple-800 text-white font-bold py-2 px-4 rounded-2xl transition duration-300' type='submit'>
-                  Create
+        <div className="flex flex-col place-items-center mt-10" id="nftForm">
+            <form className="bg-white shadow-md rounded px-8 pt-4 pb-8 mb-4">
+            <h3 className="text-center font-bold text-purple-500 mb-8">Upload your NFT to the marketplace</h3>
+                <div className="mb-4">
+                    <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="name">NFT Name</label>
+                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" id="name" type="text" placeholder="Axie#4563" onChange={e => updateFormParams({...formParams, name: e.target.value})} value={formParams.name}></input>
+                </div>
+                <div className="mb-6">
+                    <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="description">NFT Description</label>
+                    <textarea className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" cols="40" rows="5" id="description" type="text" placeholder="Axie Infinity Collection" value={formParams.description} onChange={e => updateFormParams({...formParams, description: e.target.value})}></textarea>
+                </div>
+                <div className="mb-6">
+                    <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="price">Price (in ETH)</label>
+                    <input className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" type="number" placeholder="Min 0.01 ETH" step="0.01" value={formParams.price} onChange={e => updateFormParams({...formParams, price: e.target.value})}></input>
+                </div>
+                <div>
+                    <label className="block text-purple-500 text-sm font-bold mb-2" htmlFor="image">Upload Image (&lt;500 KB)</label>
+                    <input type={"file"} onChange={OnChangeFile}></input>
+                </div>
+                <br></br>
+                <div className="text-red-500 text-center">{message}</div>
+                <button onClick={listNFT} className="font-bold mt-10 w-full bg-purple-500 text-white rounded p-2 shadow-lg" id="list-button">
+                    List NFT
                 </button>
-              </div>
             </form>
-          </div>
         </div>
-      </div>
-      </div>
-    );
-  };
+        </div>
+    </>
+  );
+};
 
-  export default Create;
+export default Create;

@@ -2,7 +2,6 @@ const { ethers } = require("hardhat");
 const hre = require("hardhat");
 const fs = require("fs");
 const { log } = require("console");
-
 async function main() {
   const [deployer] = await ethers.getSigners();
   const balance = await deployer.getBalance();
@@ -20,7 +19,7 @@ async function main() {
 
   //This writes the ABI and address to the mktplace.json
   fs.writeFileSync('./src/Marketplace.json', JSON.stringify(data))
-  console.log("Deploying contract...");
+  
 
 }
 
